@@ -5,9 +5,6 @@ package oak.http;
 // Time: 4:47 PM
 // Copyright (c) 2012 WillowTree Apps, Inc. All rights reserved.
 
-import android.os.Handler;
-import android.os.Message;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -27,10 +24,8 @@ public abstract class AbstractOAKRequest<T> {
     private boolean noCache;
     private boolean noStore;
     private boolean cacheOnly;
-    private boolean isFollowUpRequest;
     private int maxStale = -1;
     private String method = "GET";
-    private OAKRequest.FreshDataCallback<T> callback;
     private Map<String, String> headers = new HashMap<String, String>();
     private PostWriter postWriter;
 
@@ -56,11 +51,6 @@ public abstract class AbstractOAKRequest<T> {
         return this;
     }
 
-    public AbstractOAKRequest setFreshDataCallback(FreshDataCallback<T> callback) {
-        this.callback = callback;
-        return this;
-    }
-
     public AbstractOAKRequest setMethod(String method) {
         this.method = method;
         return this;
@@ -70,36 +60,12 @@ public abstract class AbstractOAKRequest<T> {
         this.cacheOnly = cacheOnly;
         return this;
     }
-
-    protected void setIsFollowUpRequest(boolean b) {
-        this.isFollowUpRequest = b;
-    }
-
-    protected boolean getIsFollowUpRequest() {
-        return isFollowUpRequest;
-    }
-
-    protected boolean hasFollowUp() {
-        return !isFollowUpRequest && callback != null;
-    }
     //endregion
 
     protected abstract T parseResponse(InputStream is) throws Exception;
 
     public void addHeader(String key, String value) {
         headers.put(key, value);
-    }
-
-    public static abstract class FreshDataCallback<T> extends Handler {
-
-        @Override
-        public void handleMessage(Message msg) {
-            if (msg.obj instanceof OAKResponse) {
-                onFreshDataReceived((OAKResponse<T>) msg.obj);
-            }
-        }
-
-        public abstract void onFreshDataReceived(OAKResponse<T> response);
     }
 
     private static abstract class PostWriter {
@@ -177,28 +143,6 @@ public abstract class AbstractOAKRequest<T> {
 
         OAKResponse<T> response = new OAKResponse<T>(conn, this);
         conn.disconnect();
-        // Queue up fresh data request
-        if (callback != null && !isFollowUpRequest) {
-            final AbstractOAKRequest<T> freshReq = newInstance();
-            freshReq.setMethod(method);
-            freshReq.setMaxStale(maxStale);
-            addHeaders(conn);
-            freshReq.setNoStore(noStore);
-            freshReq.setNoCache(true);
-            freshReq.setIsFollowUpRequest(true);
-            new Thread(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        OAKResponse<T> resp = freshReq.execute();
-                        callback.onFreshDataReceived(resp);
-                    } catch (Exception e) {
-                        // TODO So what here...?
-                    }
-                }
-            }).start();
-        }
         return response;
     }
 
@@ -208,10 +152,10 @@ public abstract class AbstractOAKRequest<T> {
         if (noStore) {
             conn.addRequestProperty("Cache-Control", "no-store");
         }
-        if (cacheOnly || callback != null) {
+        if (cacheOnly) {
             conn.addRequestProperty("Cache-Control", "only-if-cached");
         }
-        if (noCache && !(cacheOnly || callback != null)) {
+        if (noCache && !cacheOnly) {
             conn.addRequestProperty("Cache-Control", "no-cache");
         }
         if (maxStale >= 0) {

@@ -48,7 +48,7 @@ public class MainActivity extends Activity {
 
     public void onResume() {
         super.onResume();
-        new TestTask(false, false).execute((Void[])null);
+        new TestTask(false).execute((Void[])null);
         new StringTask().execute((Void[]) null);
         new GsonTask().execute((Void[]) null);
         new JustTheDataTask().execute((Void[]) null);
@@ -61,36 +61,21 @@ public class MainActivity extends Activity {
     private class TestTask extends AsyncTask<Void, Void, OAKResponse<String>> {
 
         boolean forceServerHit = false;
-        boolean doubleRead = false;
-        OAKRequest.FreshDataCallback<String> callback;
         Exception e;
         int taskNum;
 
 
-        public TestTask(boolean forceServerHit, boolean doubleRead) {
+        public TestTask(boolean forceServerHit) {
             this.forceServerHit = forceServerHit;
-            this.doubleRead = doubleRead;
             taskNum = taskNumber;
             taskNumber++;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            if(doubleRead) {
-                callback = new OAKRequest.FreshDataCallback<String>() {
-                    @Override
-                    public void onFreshDataReceived(OAKResponse<String> response) {
-                        doHandleResponse(response);
-                    }
-                };
-            }
         }
 
         @Override
         protected OAKResponse<String> doInBackground(Void... voids) {
 
             try {
-                return api.getTest(forceServerHit, callback);
+                return api.getTest(forceServerHit);
             } catch(Exception e) {
                 this.e = e;
             }
@@ -184,7 +169,7 @@ public class MainActivity extends Activity {
 
     private static class TestAPI {
 
-        public OAKResponse<String> getTest(boolean forceServerHit, OAKRequest.FreshDataCallback<String> callback) throws Exception {
+        public OAKResponse<String> getTest(boolean forceServerHit) throws Exception {
             OAKRequest<String> request = new OAKRequest<String>("http://www.google.com",
                     new OAKResponseParser<String>() {
                         @Override
@@ -207,7 +192,6 @@ public class MainActivity extends Activity {
                     }
             );
             request.setMethod("GET").setMaxStale(20).setNoCache(forceServerHit);
-            request.setFreshDataCallback(callback);
             return request.execute();
         }
 

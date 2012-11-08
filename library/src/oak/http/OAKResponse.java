@@ -13,15 +13,11 @@ import java.util.Map;
 public class OAKResponse<T> {
 
     private T payload;
-    private boolean followUpExpected;
-    private boolean isFollowUp;
     private boolean fromCache;
     private Map<String, List<String>> headers = new HashMap<String,List<String>>();
 
     public OAKResponse(HttpURLConnection conn, AbstractOAKRequest<T> request) throws Exception {
         headers = conn.getHeaderFields();
-        followUpExpected = request.hasFollowUp();
-        isFollowUp = request.getIsFollowUpRequest();
         // TODO fromCache
         this.payload = request.parseResponse(conn.getInputStream());
     }
@@ -30,16 +26,8 @@ public class OAKResponse<T> {
         return payload;
     }
 
-    public boolean isFollowUpExpected() {
-        return followUpExpected;
-    }
-
     public boolean isFromCache() {
         return fromCache;
-    }
-
-    public boolean isFollowUp() {
-        return isFollowUp;
     }
 
     public Map<String, List<String>> getHeaders() {
