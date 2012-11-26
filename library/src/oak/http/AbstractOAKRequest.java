@@ -5,9 +5,11 @@ package oak.http;
 // Time: 4:47 PM
 // Copyright (c) 2012 WillowTree Apps, Inc. All rights reserved.
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -19,13 +21,14 @@ public abstract class AbstractOAKRequest<T> {
     public static final String METHOD_DELETE = "DELETE";
     public static final String METHOD_PUT = "PUT";
     public static final String METHOD_POST = "POST";
+    private static final String[] METHODS = {METHOD_GET, METHOD_DELETE, METHOD_PUT, METHOD_POST};
 
     protected URL url;
     private boolean noCache;
     private boolean noStore;
     private boolean cacheOnly;
     private int maxStale = -1;
-    private String method = "GET";
+    private String method = METHOD_GET;
     private Map<String, String> headers = new HashMap<String, String>();
     private PostWriter postWriter;
 
@@ -52,8 +55,23 @@ public abstract class AbstractOAKRequest<T> {
     }
 
     public AbstractOAKRequest setMethod(String method) {
+        if(!methodValid(method)) {
+            throw new IllegalArgumentException("Invalid HTTP method for setMethod()");
+        }
         this.method = method;
         return this;
+    }
+
+    private static boolean methodValid(String method) {
+        if(method == null) {
+            return false;
+        }
+        for(String m : METHODS) {
+            if(m.equals(method)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public AbstractOAKRequest<T> setCacheOnly(boolean cacheOnly) {
@@ -62,7 +80,7 @@ public abstract class AbstractOAKRequest<T> {
     }
     //endregion
 
-    protected abstract T parseResponse(InputStream is) throws Exception;
+    protected abstract T parseResponse(InputStream is) throws IOException;
 
     public void addHeader(String key, String value) {
         headers.put(key, value);
@@ -70,13 +88,14 @@ public abstract class AbstractOAKRequest<T> {
 
     private static abstract class PostWriter {
         abstract void configureConnection(HttpURLConnection conn);
-        abstract void writeToStream(HttpURLConnection conn) throws Exception;
+        abstract void writeToStream(HttpURLConnection conn) throws IOException;
     }
 
     public void setPostData(Map<String, String> webFormPairs) {
 
         StringBuilder sb = new StringBuilder();
-        String[] keys = (String[]) webFormPairs.keySet().toArray();
+        String[] keys = new String[webFormPairs.keySet().size()];
+        webFormPairs.keySet().toArray(keys);
         for(int i = 0; i < keys.length; i++) {
             if(i > 0) {
                 sb.append('&');
@@ -98,7 +117,7 @@ public abstract class AbstractOAKRequest<T> {
             }
 
             @Override
-            void writeToStream(HttpURLConnection conn) throws Exception {
+            void writeToStream(HttpURLConnection conn) throws IOException {
                 byte[] buff = new byte[1024];
                 OutputStream out = conn.getOutputStream();
                 while(stream.read(buff) > 0) {
@@ -122,16 +141,21 @@ public abstract class AbstractOAKRequest<T> {
             }
 
             @Override
-            void writeToStream(HttpURLConnection conn) throws Exception {
+            void writeToStream(HttpURLConnection conn) throws IOException {
                 conn.getOutputStream().write(data);
                 conn.getOutputStream().close();
             }
         };
     }
 
-    public OAKResponse<T> execute() throws Exception {
+    public OAKResponse<T> execute() throws IOException {
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod(method);
+
+        try {
+            conn.setRequestMethod(method);
+        } catch(ProtocolException ex) {
+            // We catch this with setMethod()
+        }
 
         addHeaders(conn);
         resolveRequestCacheSettings(conn);
@@ -142,6 +166,7 @@ public abstract class AbstractOAKRequest<T> {
         }
 
         OAKResponse<T> response = new OAKResponse<T>(conn, this);
+
         conn.disconnect();
         return response;
     }

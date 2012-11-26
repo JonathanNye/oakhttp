@@ -6,6 +6,7 @@ package oak.http;
 // Copyright (c) 2012 WillowTree Apps, Inc. All rights reserved.
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
@@ -31,7 +32,7 @@ public class OAKStringRequest extends AbstractOAKRequest<String>{
     }
 
     @Override
-    protected String parseResponse(InputStream is) throws Exception {
+    protected String parseResponse(InputStream is) throws IOException {
         StringBuilder sb = new StringBuilder();
         BufferedReader buf = new BufferedReader(new InputStreamReader(is));
         String s;

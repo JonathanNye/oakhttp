@@ -33,7 +33,11 @@ public class OAKRequest<T> extends AbstractOAKRequest {
 
     @Override
     protected T parseResponse(InputStream is) throws Exception {
-        return parser.parseResponse(is);
+        if(parser != null) {
+            return parser.parseResponse(is);
+        } else {
+            return null;
+        }
     }
 
 }

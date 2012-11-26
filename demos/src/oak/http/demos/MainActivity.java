@@ -39,10 +39,7 @@ public class MainActivity extends Activity {
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        OAKCacheHelper.initialize();
-        Log.d("OAKHttpDemos", "Uninstalling old cache success: " + OAKCacheHelper.uninstallCache());
-        boolean enable = OAKCacheHelper.enableCache(getApplication().getCacheDir(), 1024*1024);
-        Log.d("OAKHttpDemos", "Installing new cache success: " + enable);
+        OAKCacheHelper.installIfNeeded(getApplication().getCacheDir(), 1024*1024);
         api = new TestAPI();
     }
 

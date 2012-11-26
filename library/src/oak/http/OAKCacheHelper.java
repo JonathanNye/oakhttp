@@ -5,7 +5,8 @@ package oak.http;
 // Time: 10:50 AM
 // Copyright (c) 2012 WillowTree Apps, Inc. All rights reserved.
 
-import android.net.http.HttpResponseCache;
+import com.integralblue.httpresponsecache.HttpResponseCache;
+
 import android.util.Log;
 
 import java.io.File;
@@ -14,43 +15,22 @@ public class OAKCacheHelper {
 
     public static final String TAG = OAKCacheHelper.class.getSimpleName();
 
-    private static HttpResponseCache androidCache;
-    private static com.integralblue.httpresponsecache.HttpResponseCache backportCache;
+    private static HttpResponseCache backportCache;
 
-    public static void initialize() {
+    public static void installIfNeeded(File cacheDir, long cacheSizeInBytes) {
         try {
-            androidCache = HttpResponseCache.getInstalled();
-        } catch (NoClassDefFoundError err) {
-            // Nothin' yet
-        } catch (Exception e) {
-            // Nothin' yet
-        }
-
-        try {
-            backportCache = com.integralblue.httpresponsecache.HttpResponseCache.getInstalled();
+            backportCache = HttpResponseCache.getInstalled();
+            if (backportCache == null) {
+                enableCache(cacheDir, cacheSizeInBytes);
+            }
         } catch(Exception e) {
             // Nothin' yet
         }
     }
 
     public static boolean enableCache(File cacheDir, long cacheSizeInBytes) {
-
         try {
-            HttpResponseCache.install(cacheDir, cacheSizeInBytes);
-            androidCache = HttpResponseCache.getInstalled();
-            return true;
-        } catch (NoClassDefFoundError err) {
-            return enableBackportCache(cacheDir, cacheSizeInBytes);
-        } catch(Exception e) {
-            return enableBackportCache(cacheDir, cacheSizeInBytes);
-        }
-    }
-
-    private static boolean enableBackportCache(File cacheDir, long cacheSizeInBytes) {
-        Log.d("OAKCacheHelper", "Trying integralblue HttpResponseCache");
-        try {
-            com.integralblue.httpresponsecache.HttpResponseCache.install(cacheDir, cacheSizeInBytes);
-            backportCache = com.integralblue.httpresponsecache.HttpResponseCache.getInstalled();
+            backportCache = HttpResponseCache.install(cacheDir, cacheSizeInBytes);
             return true;
         }catch(Exception e) {
             Log.d("OAKCacheHelper", "Failed to set up integralblue HttpResponseCache");
@@ -60,33 +40,22 @@ public class OAKCacheHelper {
 
     public static boolean disableCache() {
         try {
-            if(androidCache != null) {
-                androidCache.close();
-                return true;
-            } else if(backportCache != null) {
-                backportCache.close();
-                return true;
-            }
+            backportCache.close();
+            return true;
         } catch(Exception e) {
             Log.d(TAG, "Disable cache exception " + e.getClass().getSimpleName());
+            return false;
         }
-        return false;
     }
 
     public static boolean uninstallCache() {
         try {
-            if(androidCache != null) {
-                androidCache.delete();
-                return true;
-            } else if(backportCache != null) {
-                backportCache.close();
-                return true;
-            }
+            backportCache.delete();
+            return true;
         } catch(Exception e) {
             Log.d(TAG, "Uninstall cache exception " + e.getClass().getSimpleName());
-
+            return false;
         }
-        return false;
     }
 
 }
