@@ -7,14 +7,13 @@
 
     <groupId>oak.http</groupId>
     <artifactId>parent</artifactId>
-    <version>0.1-SNAPSHOT</version>
-
-    <modules>
-        <module>library</module>
-        <module>demos</module>
-    </modules>
+    <version>0.1</version>
 
     <properties>
+        <wta.repo.release>http://maven.willowtreeapps.com/repository/internal/</wta.repo.release>
+        <wta.repo.snapshot>http://maven.willowtreeapps.com/repository/snapshots/</wta.repo.snapshot>
+        <app.versioncode>9999</app.versioncode>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
@@ -27,6 +26,24 @@
         <robolectric.version>1.0</robolectric.version>
         <junit.version>4.10</junit.version>
     </properties>
+
+    <distributionManagement>
+        <repository>
+            <id>wta.internal</id>
+            <name>WillowTree Internal Repository</name>
+            <url>http://maven.willowtreeapps.com/repository/internal/</url>
+        </repository>
+        <snapshotRepository>
+            <id>wta.snapshots</id>
+            <name>WillowTree Snapshot Repository</name>
+            <url>http://maven.willowtreeapps.com/repository/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <modules>
+        <module>library</module>
+        <module>demos</module>
+    </modules>
 
     <dependencyManagement>
         <dependencies>
@@ -54,5 +71,4 @@
         </dependencies>
     </dependencyManagement>
 
-    
 </project>

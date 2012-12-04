@@ -17,13 +17,13 @@ import java.util.Map;
 public class OAKResponse<T> {
 
     private T payload;
-    private boolean fromCache;
     private String error;
     private Map<String, List<String>> headers = new HashMap<String,List<String>>();
+    private int responseCode;
 
     public OAKResponse(HttpURLConnection conn, AbstractOAKRequest<T> request) throws IOException {
         headers = conn.getHeaderFields();
-        // TODO fromCache
+        responseCode = conn.getResponseCode();
         try {
             this.payload = request.parseResponse(conn.getInputStream());
         } catch(IOException e1) {
@@ -43,12 +43,12 @@ public class OAKResponse<T> {
         return error;
     }
 
-    public boolean isFromCache() {
-        return fromCache;
-    }
-
     public Map<String, List<String>> getHeaders() {
         return headers;
+    }
+
+    public int getResponseCode() {
+        return responseCode;
     }
 
     private String streamToString(InputStream is) throws IOException {
